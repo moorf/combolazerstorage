@@ -5,6 +5,10 @@ python with tkinter, dotnet 8.0 runtime
 - copying lazer beatmap files to osu!stable filesystem format (operation mode 1)
 - making symlinks from osu!stable filesystem format to use in lazer (operation mode 2)
 - then using these symlinks to import into osu!lazer database (operation mode 3)
+
+as a result, you will have a songs folder that is easy to restore in case osu!lazer database gets corrupted. also, you save space by being able to access the same file from both lazer and stable.
+moreover, you get a bit more precise control over maps, although a bit limited for now (hashes are written to realm from songs folder names for now)
+
 ## some other use cases:
 - migrating database between different schema_versions
 - merging multiple databases into one
