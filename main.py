@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import subprocess
 import sys
+import ctypes 
 
 def select_folder(title):
     """Opens a folder picker dialog with a custom title."""
@@ -69,7 +70,22 @@ def on_submit():
     # Call the function to ask for numerical input
     get_numerical_input()
 
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except:
+        return False
 
+# If the script is not running as admin, relaunch it with admin rights
+if not is_admin():
+    # Arguments for relaunching the script with admin privileges
+    script = sys.argv[0]
+    params = " ".join(sys.argv[1:])
+    
+    # Use ShellExecuteEx to run the script as administrator
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{script}" {params}', None, 1)
+    print("l")
+    sys.exit()
 # GUI setup
 root = tk.Tk()
 root.title("Mode Selector")
