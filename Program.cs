@@ -13,6 +13,7 @@ using System.Diagnostics;
 
 public class Program
 {
+
     private static void onMigration(Migration migration, ulong lastSchemaVersion) { }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -141,10 +142,32 @@ public class Program
                         string hash = beatmapFile.File.Hash;
                         string fullsrc = WithSlash(lazerFilesFolder) + hash.Substring(0, 1) + "/" + hash.Substring(0, 2) + "/" + hash;
                         string dest = WithSlash(legacyFilesFolder) + beatmapFiles.Hash + "/" + beatmapFile.Filename;
-                        if ((System.IO.File.Exists(fullsrc)) && (dest != null) && !(System.IO.File.Exists(dest)))
+                        try
                         {
-                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dest));
-                            System.IO.File.Copy(fullsrc, dest, false);
+                            // Check if source file exists
+                            if (System.IO.File.Exists(fullsrc) && !string.IsNullOrEmpty(dest))
+                            {
+                                // Ensure destination directory exists
+                                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dest));
+
+                                // Copy the file from source to destination
+                                System.IO.File.Copy(fullsrc, dest, false);
+                            }
+                        }
+                        catch (IOException ioEx)
+                        {
+                            // Log the error but continue
+                            Console.WriteLine($"File access error (IO) while processing {fullsrc}: {ioEx.Message}");
+                        }
+                        catch (UnauthorizedAccessException authEx)
+                        {
+                            // Log the error but continue
+                            Console.WriteLine($"Unauthorized access error while processing {fullsrc}: {authEx.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            // Catch any other unexpected errors and continue
+                            Console.WriteLine($"Unexpected error while processing {fullsrc}: {ex.Message}");
                         }
                     }
                 }
@@ -187,142 +210,115 @@ public class Program
                 }
             }
         }
+        Console.WriteLine("Done LegacyToSym.");
     }
 
     static void UpdateDatabase(string legacyFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
     {
         var sourceConfig = new RealmConfiguration(realmPathFile)
         {
-            SchemaVersion = (ulong)Int64.Parse(schema_ver), 
+            SchemaVersion = (ulong)Int64.Parse(schema_ver),
             MigrationCallback = onMigration,
             FallbackPipePath = Path.Combine(Path.GetTempPath(), @"lazer"),
         };
 
         var realm = Realm.GetInstance(sourceConfig);
-
+        foreach (var beatmap in realm.All<BeatmapSetInfo>())
+        {
+            Console.WriteLine(beatmap.Hash);
+        }
         foreach (var songdirs in ListDirectoriesWithOsuFiles(legacyFolder))
         {
+            string hashStr = Path.GetFileName(songdirs);
             List<RealmNamedFileUsage> files = new List<RealmNamedFileUsage>();
-
+            int flag = 0;
             Console.WriteLine(songdirs);
-            MemoryStream hashable = new MemoryStream();
-
-            if (songdirs != null)
+            using (MemoryStream hashable = new MemoryStream())
             {
-                foreach (var filenames in Directory.GetFiles(songdirs))
+
+                var ola = (string.IsNullOrEmpty(hashStr) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == hashStr));
+                if (ola != null)
                 {
-                    using (SHA256 sha256 = SHA256.Create())
+                    Console.WriteLine("Beatmap already exists in database."); flag = 1;
+                    Console.WriteLine(hashStr.ToString());
+                    Console.WriteLine(hashStr.Length);
+                    Console.WriteLine(ola.Hash);
+                }
+                else
+                {
+                    Console.WriteLine("Beatmap not in database."); flag = 0;
+                    Console.WriteLine(hashStr.ToString());
+                }
+                if (hashStr == "System.Byte[]")
+                {
+                    Console.WriteLine("man?");
+                    System.Environment.Exit(1);
+                }
+                if (flag == 1)
+                {
+                    continue;
+                }
+                if (songdirs != null)
+                {
+                    foreach (var filenames in Directory.GetFiles(songdirs))
                     {
-                        using (FileStream fileStream = new FileStream(filenames, FileMode.Open, FileAccess.Read))
+                        using (SHA256 sha256 = SHA256.Create())
                         {
-                            byte[] fileBytes = File.ReadAllBytes(filenames);
-                            using (MemoryStream memoryStream = new MemoryStream(fileBytes))
+                            using (FileStream fileStream = new FileStream(filenames, FileMode.Open, FileAccess.Read))
                             {
-                                memoryStream.CopyTo(hashable);
+                                byte[] fileBytes = File.ReadAllBytes(filenames);
+                                using (MemoryStream memoryStream = new MemoryStream(fileBytes))
+                                {
+                                    memoryStream.CopyTo(hashable);
+                                    //Console.WriteLine("1");
+                                }
+                                byte[] hashBytes = sha256.ComputeHash(fileStream);
+                                string _hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                                //Console.WriteLine(_hashStr);
+                                RealmFile realmfile = new RealmFile();
+                                realmfile.Hash = _hashStr;
+                                string truncName = Path.GetFileName(filenames);
+                                files.Add(new RealmNamedFileUsage(realmfile, truncName));
                             }
-                            byte[] hashBytes = sha256.ComputeHash(fileStream);
-                            string hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-                            RealmFile realmfile = new RealmFile();
-                            realmfile.Hash = hashStr;
-                            string truncName = Path.GetFileName(filenames);
-                            files.Add(new RealmNamedFileUsage(realmfile, truncName));
                         }
                     }
                 }
-            }
 
-            using (var transaction = realm.BeginWrite())
-            {
-                foreach (var file in files)
+                using (var transaction = realm.BeginWrite())
                 {
-                    if (!file.File.IsManaged)
-                        realm.Add(file.File, true);
+                    foreach (var file in files)
+                    {
+                        if (!file.File.IsManaged)
+                            realm.Add(file.File, true);
 
+                    }
+                    transaction.Commit();
                 }
-                transaction.Commit();
-            }
-            BeatmapSetInfo item = new BeatmapSetInfo();
-            item.Files.AddRange(files);
+                BeatmapSetInfo item = new BeatmapSetInfo();
+                item.Files.AddRange(files);
 
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                if (hashable == null) continue;
-                item.Hash = sha256.ComputeHash(hashable).ToString();
-            }
-            using (var transaction = realm.BeginWrite())
-            {
-                Populate(item, realm, WithSlash(lazerFilesFolder));
-                realm.Add(item);
+                using (SHA256 _sha256 = SHA256.Create())
+                {
+                    if (hashable == null || hashable.Length < 1) continue;
+                    hashable.Position = 0;
+                    byte[] _hashBytes = _sha256.ComputeHash(hashable);
+                    //Console.WriteLine(BitConverter.ToString(hashable.ToArray().Take(20).ToArray()));
+                    string a = BitConverter.ToString(_hashBytes).Replace("-", "").ToLower();
+                    item.Hash = BitConverter.ToString(_hashBytes).Replace("-", "").ToLower();
+                    Console.WriteLine("item hash is:  " + a);
+                }
+                using (var transaction = realm.BeginWrite())
+                {
+                    Populate(item, realm, WithSlash(lazerFilesFolder));
+                    realm.Add(item);
 
-                transaction.Commit();
+                    transaction.Commit();
+                }
             }
         }
     }
-    static void Main(string[] args)
-    {
 
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Error: Not enough arguments provided.");
-            try
-            {
-                Process process = new Process();
-                process.StartInfo.FileName = "cmd.exe";
-                process.StartInfo.Arguments = $"/C python main.py"; // Runs and closes CMD
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = false; // Runs without showing CMD window
-
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-
-                process.WaitForExit();
-
-                Console.WriteLine("Output:\n" + output);
-                Console.WriteLine("Error:\n" + error);
-                
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-            Console.ReadLine();
-            return;
-        }
-
-        int mode;
-        if (!int.TryParse(args[0], out mode) || mode < 1 || mode > 3)
-        {
-            Console.WriteLine("Error: Invalid mode.");
-            return;
-        }
-
-        Console.WriteLine($"Selected Mode: {mode}");
-
-        for (int i = 1; i < args.Length; i++)
-        {
-            Console.WriteLine($"Path {i}: {args[i]}");
-            if (args[i] == null || args[i].Length < 1)
-            {
-                Console.WriteLine("Some arguments passed are null. Aborting"); System.Environment.Exit(1);
-            }
-        }
-
-        switch (mode)
-        {
-            case 1:
-                ToLegacy(args[1], args[2], args[3], args[4]); break;
-            case 2:
-                LegacyToSym(args[1], args[2]); break;
-            case 3:
-                UpdateDatabase(args[1], args[2], args[3], args[4]); break;
-            default:
-                Console.WriteLine("Something is wrong with the selected operation mode"); break;
-        }
-    }
-    static protected void Populate(BeatmapSetInfo beatmapSet, Realm realm, string basePath)
+    static void Populate(BeatmapSetInfo beatmapSet, Realm realm, string basePath)
     {
         beatmapSet.Beatmaps.AddRange(createBeatmapDifficulties(beatmapSet, realm, basePath));
 
@@ -345,4 +341,69 @@ public class Program
             }
         }
     }
-}
+
+    static void Main(string[] args)
+        {
+
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Error: Not enough arguments provided.");
+                try
+                {
+                    Process process = new Process();
+                    process.StartInfo.FileName = "cmd.exe";
+                    process.StartInfo.Arguments = $"/C python main.py"; // Runs and closes CMD
+                    process.StartInfo.RedirectStandardOutput = false;
+                    process.StartInfo.RedirectStandardError = false;
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = false; // Runs without showing CMD window
+
+                    process.Start();
+                    string output = process.StandardOutput.ReadToEnd();
+                    string error = process.StandardError.ReadToEnd();
+
+                    process.WaitForExit();
+
+                    Console.WriteLine("Output:\n" + output);
+                    Console.WriteLine("Error:\n" + error);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+                Console.ReadLine();
+                return;
+            }
+
+            int mode;
+            if (!int.TryParse(args[0], out mode) || mode < 1 || mode > 3)
+            {
+                Console.WriteLine("Error: Invalid mode.");
+                return;
+            }
+
+            Console.WriteLine($"Selected Mode: {mode}");
+
+            for (int i = 1; i < args.Length; i++)
+            {
+                Console.WriteLine($"Path {i}: {args[i]}");
+                if (args[i] == null || args[i].Length < 1)
+                {
+                    Console.WriteLine("Some arguments passed are null. Aborting"); System.Environment.Exit(1);
+                }
+            }
+
+            switch (mode)
+            {
+                case 1:
+                    ToLegacy(args[1], args[2], args[3], args[4]); break;
+                case 2:
+                    LegacyToSym(args[1], args[2]); break;
+                case 3:
+                    UpdateDatabase(args[1], args[2], args[3], args[4]); break;
+                default:
+                    Console.WriteLine("Something is wrong with the selected operation mode"); break;
+            }
+        }
+    }
