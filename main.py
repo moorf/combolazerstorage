@@ -48,7 +48,7 @@ def on_submit():
             num_window.destroy()
 
             # Call the C# program and pass arguments
-            command = f'cmd.exe /K dotnet run {mode} ' + " ".join(paths) + f" {num_value}"
+            command = f'cmd.exe /K combolazerstorage.exe {mode} ' + " ".join(paths) + f" {num_value}"
             
             try:
                 # Run the command in a new CMD window

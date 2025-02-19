@@ -9,6 +9,7 @@ using osu.Game.Rulesets.Objects.Types;
 using Realms;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Diagnostics;
 
 public class Program
 {
@@ -132,14 +133,15 @@ public class Program
                 foreach (var beatmapFiles in allObjectsBeatmapInfo)
                 {
                     i++;
+                    string cumhash = i.ToString();
                     Console.WriteLine(i);
                     foreach (var beatmapFile in beatmapFiles.Files)
                     {
                         Console.WriteLine(beatmapFile.Filename);
                         string hash = beatmapFile.File.Hash;
                         string fullsrc = WithSlash(lazerFilesFolder) + hash.Substring(0, 1) + "/" + hash.Substring(0, 2) + "/" + hash;
-                        string dest = WithSlash(legacyFilesFolder) + i + "/" + beatmapFile.Filename;
-                        if ((System.IO.File.Exists(fullsrc)) && (dest != null))
+                        string dest = WithSlash(legacyFilesFolder) + beatmapFiles.Hash + "/" + beatmapFile.Filename;
+                        if ((System.IO.File.Exists(fullsrc)) && (dest != null) && !(System.IO.File.Exists(dest)))
                         {
                             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dest));
                             System.IO.File.Copy(fullsrc, dest, false);
@@ -262,6 +264,31 @@ public class Program
         if (args.Length < 2)
         {
             Console.WriteLine("Error: Not enough arguments provided.");
+            try
+            {
+                Process process = new Process();
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = $"/C python main.py"; // Runs and closes CMD
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = false; // Runs without showing CMD window
+
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                Console.WriteLine("Output:\n" + output);
+                Console.WriteLine("Error:\n" + error);
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            Console.ReadLine();
             return;
         }
 
@@ -277,7 +304,7 @@ public class Program
         for (int i = 1; i < args.Length; i++)
         {
             Console.WriteLine($"Path {i}: {args[i]}");
-            if (args[i] == null || args[i].Length == 0)
+            if (args[i] == null || args[i].Length < 1)
             {
                 Console.WriteLine("Some arguments passed are null. Aborting"); System.Environment.Exit(1);
             }

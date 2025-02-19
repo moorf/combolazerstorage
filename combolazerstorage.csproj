@@ -5,13 +5,38 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<RuntimeIdentifier Condition="'$(OS)' == 'Windows_NT'">win-x64</RuntimeIdentifier>
+	<RuntimeIdentifier Condition="'$(OS)' == 'Darwin'">osx-x64</RuntimeIdentifier>
+	<RuntimeIdentifier Condition="'$(OS)' == 'Linux'">linux-x64</RuntimeIdentifier>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+	<PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ppy.osu.Framework" Version="2025.217.0" />
-    <PackageReference Include="ppy.osu.Game" Version="2025.204.0" />
-    <PackageReference Include="Realm" Version="20.1.0" />
+    <PackageReference Include="ppy.osu.Framework" Version="2025.217.0">
+	<PrivateAssets>all</PrivateAssets>
+	</PackageReference>
+    <PackageReference Include="ppy.osu.Game" Version="2025.204.0">
+	<PrivateAssets>all</PrivateAssets>
+	</PackageReference>
+    <PackageReference Include="Realm" Version="20.1.0">
+	<PrivateAssets>all</PrivateAssets>
+	</PackageReference>
+	<PackageReference Include="ppy.osu.Game.Resources" Version="2025.129.0">
+        <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+	<PackageReference Include="ppy.osuTK.NS20" Version="1.0.211">
+        <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+	<PackageReference Include="Humanizer" Version="2.14.1">
+        <ExcludeAssets>all</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+  <None Include="main.py">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+
 
 </Project>
