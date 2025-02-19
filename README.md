@@ -2,4 +2,4 @@ requirements:
 python, dotnet 8.0, tkinter
 
 usage:
-via gui or look up source code
+launch main.py for gui or look up source code
