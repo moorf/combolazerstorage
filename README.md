@@ -1,5 +1,5 @@
 # requirements:
-python, dotnet 8.0 runtime, tkinter
+python with tkinter, dotnet 8.0 runtime
 
 # what it is for
 - copying lazer beatmap files to osu!stable filesystem format (operation mode 1)
