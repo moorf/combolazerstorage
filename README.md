@@ -17,7 +17,7 @@ moreover, you get a bit more precise control over maps, although a bit limited f
 # usage:
 `dotnet build combolazerstorage.sln`, then launch `bin/Debug/net8.0/combolazerstorage.exe` **as admin (Windows)** or `dotnet run` (Linux)
 >admin rights are needed for symlink creation
-# example usage without gui (merging two databases together):
+## example usage without gui (merging two databases together):
 ```
 combolazerstorage.exe 1 D:\osul D:\osulazer_files C:\Users\%username%\Desktop\23\client_46.realm 46
 combolazerstorage.exe 1 D:\osul D:\osulazer_files C:\Users\%username%\Desktop\linux\client_47.realm 47
