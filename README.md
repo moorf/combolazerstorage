@@ -1,3 +1,5 @@
+![Demo Screenshot](demo.png)
+
 # requirements:
 python with tkinter, dotnet 8.0 runtime
 
