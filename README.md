@@ -15,7 +15,7 @@ moreover, you get a bit more precise control over maps, although a bit limited f
 - migrating database between different schema_versions
 - merging multiple databases into one
 # usage:
-run .exe from latest release **as admin (Windows, alternatively, enable Developer Mode (not recommended))**, or build (requires .NET 8.0 SDK) `dotnet build combolazerstorage.sln`, then launch (as admin) `bin/Debug/net8.0/combolazerstorage.exe` or `dotnet run` (Linux, no root required)
+run .exe (requires .NET 8.0 runtime) from latest release **as admin (alternatively, enable Developer Mode (not recommended))**, or build (requires .NET 8.0 SDK) `dotnet build combolazerstorage.sln`, then run .exe (as admin), or `dotnet run` (Linux, no root required)
 >admin rights are needed for symlink creation
 ## example usage without gui (merging two databases together):
 ```
