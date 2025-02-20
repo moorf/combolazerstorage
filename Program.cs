@@ -9,7 +9,8 @@ using osu.Game.Rulesets.Objects.Types;
 using Realms;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Diagnostics;
+using osu.Framework;
+using osu.Framework.Platform;
 
 public class Program
 {
@@ -328,7 +329,7 @@ public class Program
                     }
                     transaction.Commit();
                 }
-
+                
                 item.Files.AddRange(files);
 
                 using (var transaction = realm.BeginWrite())
@@ -372,31 +373,43 @@ public class Program
             if (args.Length < 2)
             {
                 Console.WriteLine("Error: Not enough arguments provided.");
-                try
-                {
-                    Process process = new Process();
-                    process.StartInfo.FileName = "cmd.exe";
-                    process.StartInfo.Arguments = $"/C python main.py"; // Runs and closes CMD
-                    process.StartInfo.RedirectStandardOutput = false;
-                    process.StartInfo.RedirectStandardError = false;
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.CreateNoWindow = false; // Runs without showing CMD window
+            using DesktopGameHost host = Host.GetSuitableDesktopHost("PerformanceCalculatorGUI", new HostOptions
+            {
+                PortableInstallation = true,
+                BypassCompositor = false,
+                FriendlyGameName = "Combo Lazer Storage"
+            });
 
-                    process.Start();
-                    string output = process.StandardOutput.ReadToEnd();
-                    string error = process.StandardError.ReadToEnd();
+            using var game = new PerformanceCalculatorGame();
 
-                    process.WaitForExit();
+            host.Run(game);
+            /*
+            try
+            {
+                Process process = new Process();
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = $"/C python main.py"; // Runs and closes CMD
+                process.StartInfo.RedirectStandardOutput = false;
+                process.StartInfo.RedirectStandardError = false;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = false; // Runs without showing CMD window
 
-                    Console.WriteLine("Output:\n" + output);
-                    Console.WriteLine("Error:\n" + error);
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
 
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
-                }
-                Console.ReadLine();
+                process.WaitForExit();
+
+                Console.WriteLine("Output:\n" + output);
+                Console.WriteLine("Error:\n" + error);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+             */
+            Console.ReadLine();
                 return;
             }
 
@@ -430,4 +443,4 @@ public class Program
                     Console.WriteLine("Something is wrong with the selected operation mode"); break;
             }
         }
-    }
+}
