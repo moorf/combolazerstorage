@@ -1,5 +1,5 @@
 ![Demo Screenshot](demo.png)
-
+# NOTE: BACKUP EVERYTHING
 # requirements:
 dotnet 8.0 runtime, python with tkinter (for simpler legacy gui)
 
@@ -9,7 +9,7 @@ dotnet 8.0 runtime, python with tkinter (for simpler legacy gui)
 - then using these symlinks to import into osu!lazer database (operation mode 3)
 
 as a result, you will have a songs folder that is easy to restore in case osu!lazer database gets corrupted. also, you save space by being able to access the same file from both lazer and stable.
-moreover, you get a bit more precise control over maps, although a bit limited for now (hashes are written to realm from songs folder names for now)
+moreover, you get a bit more precise control over maps, although a bit limited for now (edited maps will be readded as new, realm will think hash for the file is the same while the file has changed)
 
 ## some other use cases:
 - migrating database between different schema_versions
