@@ -34,6 +34,7 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Game.Rulesets;
 using osu.Framework.Platform;
+using osu.Game.Graphics.Backgrounds;
 
 
 public partial class PerformanceCalculatorGame : OsuGameBase
@@ -375,6 +376,20 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
         };
         InternalChildren = new Drawable[]
         {
+            new Box
+            {
+                RelativeSizeAxes = Axes.Both,
+                Colour = Colour4.DarkOrchid,
+                Alpha = 0.2f,
+                
+            },
+            new TrianglesV2
+            {
+                RelativeSizeAxes = Axes.Both,
+                Colour = Colour4.LightGoldenrodYellow,
+                Alpha = 0.1f,
+                
+            },
             legacyDirPathText,
             lazerDirPathText,
             realmFilePathText,
@@ -402,6 +417,7 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
                 Name = "realmFileSelector",
                 
             },
+
             dropdown,
             legacyFileButton,
             lazerFileButton,
@@ -426,6 +442,8 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
     {
         string command = (optionList.IndexOf(mode.Value) + 1).ToString() + " " + legacyDirPath.Value + " " + lazerDirPath.Value + " " + realmFilePath.Value + " " + schema_version + " ";
         Console.WriteLine(command);
+        List<string> arguments = new List<string> { (optionList.IndexOf(mode.Value) + 1).ToString(), legacyDirPath.Value, lazerDirPath.Value, realmFilePath.Value, schema_version };
+        Program.MainApp(arguments.ToArray());
     }
         private void dropdownChanged(ValueChangedEvent<string> e)
     {

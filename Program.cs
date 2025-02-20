@@ -366,7 +366,38 @@ public class Program
             }
         }
     }
+    public static void MainApp(string[] args)
+    {
+        int mode;
+        if (!int.TryParse(args[0], out mode) || mode < 1 || mode > 3)
+        {
+            Console.WriteLine("Error: Invalid mode.");
+            return;
+        }
 
+        Console.WriteLine($"Selected Mode: {mode}");
+
+        for (int i = 1; i < args.Length; i++)
+        {
+            Console.WriteLine($"Path {i}: {args[i]}");
+            if (args[i] == null || args[i].Length < 1)
+            {
+                Console.WriteLine("Some arguments passed are null. Aborting"); System.Environment.Exit(1);
+            }
+        }
+
+        switch (mode)
+        {
+            case 1:
+                LazerToLegacy(args[1], args[2], args[3], args[4]); break;
+            case 2:
+                LegacyToSymbolic(args[1], args[2]); break;
+            case 3:
+                UpdateDatabase(args[1], args[2], args[3], args[4]); break;
+            default:
+                Console.WriteLine("Something is wrong with the selected operation mode"); break;
+        }
+    }
     static void Main(string[] args)
         {
 
@@ -412,35 +443,6 @@ public class Program
             Console.ReadLine();
                 return;
             }
-
-            int mode;
-            if (!int.TryParse(args[0], out mode) || mode < 1 || mode > 3)
-            {
-                Console.WriteLine("Error: Invalid mode.");
-                return;
-            }
-
-            Console.WriteLine($"Selected Mode: {mode}");
-
-            for (int i = 1; i < args.Length; i++)
-            {
-                Console.WriteLine($"Path {i}: {args[i]}");
-                if (args[i] == null || args[i].Length < 1)
-                {
-                    Console.WriteLine("Some arguments passed are null. Aborting"); System.Environment.Exit(1);
-                }
-            }
-
-            switch (mode)
-            {
-                case 1:
-                    LazerToLegacy(args[1], args[2], args[3], args[4]); break;
-                case 2:
-                    LegacyToSymbolic(args[1], args[2]); break;
-                case 3:
-                    UpdateDatabase(args[1], args[2], args[3], args[4]); break;
-                default:
-                    Console.WriteLine("Something is wrong with the selected operation mode"); break;
-            }
+        MainApp(args);
         }
 }
