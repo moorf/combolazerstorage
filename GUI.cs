@@ -1,4 +1,7 @@
-﻿using osu.Framework.Graphics;
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osuTK;
 using System.Reflection;
@@ -37,7 +40,7 @@ using osu.Framework.Platform;
 using osu.Game.Graphics.Backgrounds;
 
 
-public partial class PerformanceCalculatorGame : OsuGameBase
+public partial class ComboLazerStorageGame : OsuGameBase
 {
     private Bindable<WindowMode> windowMode;
     private DependencyContainer dependencies;
@@ -75,7 +78,7 @@ public partial class PerformanceCalculatorGame : OsuGameBase
                 new OsuContextMenuContainer
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Child = new PerformanceCalculatorSceneManager()
+                    Child = new ComboLazerStorageSceneManager()
                 },
                 dialogOverlay,
                 notificationDisplay
@@ -105,7 +108,7 @@ public partial class PerformanceCalculatorGame : OsuGameBase
     }
 }
 
-public partial class PerformanceCalculatorSceneManager : CompositeDrawable
+public partial class ComboLazerStorageSceneManager : CompositeDrawable
 {
     private ScreenStack screenStack;
 
@@ -123,7 +126,7 @@ public partial class PerformanceCalculatorSceneManager : CompositeDrawable
     [Cached]
     private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Blue);
 
-    public PerformanceCalculatorSceneManager()
+    public ComboLazerStorageSceneManager()
     {
         RelativeSizeAxes = Axes.Both;
     }
@@ -164,6 +167,13 @@ public partial class PerformanceCalculatorSceneManager : CompositeDrawable
                                         {
                                             Colour = OsuColour.Gray(0.1f),
                                             RelativeSizeAxes = Axes.Both,
+                                        },
+                                        new OsuSpriteText
+                                        {
+                                            Colour = Colour4.Wheat,
+                                            Text = " Combo Lazer Storage",
+                                            Font = OsuFont.Default.With(size: 40, weight: "bold")
+
                                         },
                                         new FillFlowContainer
                                         {
@@ -219,7 +229,7 @@ public partial class PerformanceCalculatorSceneManager : CompositeDrawable
     {
         if (screenStack.CurrentScreen != null)
         {
-            if (screenStack.CurrentScreen is PerformanceCalculatorScreen { ShouldShowConfirmationDialogOnSwitch: true })
+            if (screenStack.CurrentScreen is ComboLazerStorageScreen { ShouldShowConfirmationDialogOnSwitch: true })
             {
                 dialogOverlay.Push(new ConfirmDialog("Are you sure?", () =>
                 {
@@ -235,7 +245,7 @@ public partial class PerformanceCalculatorSceneManager : CompositeDrawable
         screenStack.Push(screen);
     }
 }
-public partial class SimulateScreen : PerformanceCalculatorScreen
+public partial class SimulateScreen : ComboLazerStorageScreen
 {
     private Container mainContent = null!;
     readonly List<string> optionList = new List<string> { "Lazer to Legacy", "Legacy to Symlinks", "Symlinks to Database" };
@@ -264,19 +274,19 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
         var legacyDirPathText = new OsuSpriteText
         {
             RelativeSizeAxes = Axes.X,
-            Position = new Vector2(300f, 100f),
+            Position = new Vector2(250f, 112f ),
             Font = OsuFont.Default.With(size: 24)
         };
         var lazerDirPathText = new OsuSpriteText
         {
             RelativeSizeAxes = Axes.X,
-            Position = new Vector2(300f, 200f),
+            Position = new Vector2(250f, 212f),
             Font = OsuFont.Default.With(size: 24),
         };
         var realmFilePathText = new OsuSpriteText
         {
             RelativeSizeAxes = Axes.X,
-            Position = new Vector2(300f, 300f),
+            Position = new Vector2(250f, 312f),
             Font = OsuFont.Default.With(size: 24)
         };
         var dropdownText = new OsuSpriteText
@@ -350,7 +360,7 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
             RelativeSizeAxes = Axes.X,
             Position = new Vector2(0, 600f),
             BackgroundColour = Colour4.BlueViolet,
-            Width = 0.3f,
+            Width = 0.5f,
             Text = @"Start",
             Enabled = { Value = true },
             Action = () =>
@@ -388,7 +398,6 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
                 RelativeSizeAxes = Axes.Both,
                 Colour = Colour4.LightGoldenrodYellow,
                 Alpha = 0.1f,
-                
             },
             legacyDirPathText,
             lazerDirPathText,
@@ -415,7 +424,6 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
                 RelativeAnchorPosition = new Vector2(0.5f, 0.0f),
                 Width = 0.5f,
                 Name = "realmFileSelector",
-                
             },
 
             dropdown,
@@ -459,7 +467,7 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
         }
         if (e.NewValue != null)
         {
-            mode.Value = dropdown.Current.Value;
+            mode.Value = "Mode: " + dropdown.Current.Value;
         }
     }
     private void legacyPathChanged(ValueChangedEvent<DirectoryInfo> e)
@@ -489,7 +497,7 @@ public partial class SimulateScreen : PerformanceCalculatorScreen
     }
 }
 
-public abstract partial class PerformanceCalculatorScreen : Screen
+public abstract partial class ComboLazerStorageScreen : Screen
 {
     public abstract bool ShouldShowConfirmationDialogOnSwitch { get; }
 }

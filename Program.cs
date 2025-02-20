@@ -1,4 +1,7 @@
-﻿using osu.Framework.Extensions;
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using osu.Framework.Extensions;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Extensions;
@@ -14,7 +17,6 @@ using osu.Framework.Platform;
 
 public class Program
 {
-
     private static void onMigration(Migration migration, ulong lastSchemaVersion) { }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -411,7 +413,7 @@ public class Program
                 FriendlyGameName = "Combo Lazer Storage"
             });
 
-            using var game = new PerformanceCalculatorGame();
+            using var game = new ComboLazerStorageGame();
 
             host.Run(game);
             /*
