@@ -108,10 +108,29 @@ public class Program
         }
         return path;
     }
+    public static HashSet<string> ListDirectoriesWithOsuFiles(string sourcePath)
+    {
+        HashSet<string> a = new HashSet<string>(1000);
+        string[] directories = Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories);
 
-    static void ToLegacy(string legacyFilesFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
+        foreach (string dir in directories)
+        {
+            string[] osuFiles = Directory.GetFiles(dir, "*.osu");
+
+            if (osuFiles.Length > 0)
+            {
+                a.Add(dir);
+            }
+        }
+        return a;
+    }
+    static void RecomputeDirectoryHashes(string legacyFolder)
     {
 
+    }
+
+    static void LazerToLegacy(string legacyFilesFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
+    {
         var sourceConfig = new RealmConfiguration(realmPathFile)
         {
             SchemaVersion = (ulong)Int64.Parse(schema_ver),
@@ -174,26 +193,11 @@ public class Program
             }
         }
     }
-    public static HashSet<string> ListDirectoriesWithOsuFiles(string sourcePath)
-    {
-        HashSet<string> a = new HashSet<string>(1000);
-        string[] directories = Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories);
 
-        foreach (string dir in directories)
-        {
-            string[] osuFiles = Directory.GetFiles(dir, "*.osu");
-
-            if (osuFiles.Length > 0)
-            {
-                a.Add(dir);
-            }
-        }
-        return a;
-    }
-    static void LegacyToSym(string legacyFilesFolder, string lazerFilesFolder)
+    static void LegacyToSymbolic(string legacyFilesFolder, string lazerFilesFolder)
     {
         string[] files = Directory.GetFiles(legacyFilesFolder, "*", SearchOption.AllDirectories);
-
+        long unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         foreach (string file in files)
         {
             using (SHA256 sha256 = SHA256.Create())
@@ -203,14 +207,27 @@ public class Program
                     byte[] hashBytes = sha256.ComputeHash(fileStream);
                     string hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
                     string fullsrc_sym = WithSlash(lazerFilesFolder) + hashStr.Substring(0, 1) + "/" + hashStr.Substring(0, 2) + "/" + hashStr;
-                    if (fullsrc_sym == null) continue;
+
+                    string fullsrc_sym_backup= WithSlash(lazerFilesFolder + (unixTimestamp).ToString()) + hashStr.Substring(0, 1) + "/" + hashStr.Substring(0, 2) + "/" + hashStr;
+                    if (String.IsNullOrEmpty(fullsrc_sym) || String.IsNullOrEmpty(fullsrc_sym_backup))
+                    {
+                        Console.WriteLine("lazer files or backupfolders name is null or empty."); 
+                        continue;
+                    }
+
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullsrc_sym));
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullsrc_sym_backup));
+
+                    if (File.Exists(fullsrc_sym))
+                    {
+                        File.Move(fullsrc_sym, fullsrc_sym_backup);
+                    }
                     bool result = CreateSymbolicLink(fullsrc_sym, file, 0);
-                    if (!result) Console.WriteLine("Failed to create symbolic link. Error code: " + Marshal.GetLastWin32Error());
+                    if (!result && Marshal.GetLastWin32Error() != 183) Console.WriteLine("Failed to create symbolic link. Error code: " + Marshal.GetLastWin32Error());
                 }
             }
         }
-        Console.WriteLine("Done LegacyToSym.");
+        Console.WriteLine("Done LegacyToSymbolic.");
     }
 
     static void UpdateDatabase(string legacyFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
@@ -223,41 +240,18 @@ public class Program
         };
 
         var realm = Realm.GetInstance(sourceConfig);
-        foreach (var beatmap in realm.All<BeatmapSetInfo>())
-        {
-            Console.WriteLine(beatmap.Hash);
-        }
+
         foreach (var songdirs in ListDirectoriesWithOsuFiles(legacyFolder))
         {
-            string hashStr = Path.GetFileName(songdirs);
+            //string hashStr = Path.GetFileName(songdirs);
+            BeatmapSetInfo item = new BeatmapSetInfo();
             List<RealmNamedFileUsage> files = new List<RealmNamedFileUsage>();
             int flag = 0;
             Console.WriteLine(songdirs);
+
             using (MemoryStream hashable = new MemoryStream())
             {
-
-                var ola = (string.IsNullOrEmpty(hashStr) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == hashStr));
-                if (ola != null)
-                {
-                    Console.WriteLine("Beatmap already exists in database."); flag = 1;
-                    Console.WriteLine(hashStr.ToString());
-                    Console.WriteLine(hashStr.Length);
-                    Console.WriteLine(ola.Hash);
-                }
-                else
-                {
-                    Console.WriteLine("Beatmap not in database."); flag = 0;
-                    Console.WriteLine(hashStr.ToString());
-                }
-                if (hashStr == "System.Byte[]")
-                {
-                    Console.WriteLine("man?");
-                    System.Environment.Exit(1);
-                }
-                if (flag == 1)
-                {
-                    continue;
-                }
+                //Making a chunk of data to be hashes, adds files to file list (realm needs hash and filename of all legacy files)
                 if (songdirs != null)
                 {
                     foreach (var filenames in Directory.GetFiles(songdirs))
@@ -283,7 +277,47 @@ public class Program
                         }
                     }
                 }
+                else
+                {
+                    Console.WriteLine("Legacy's one of song directories is null. ");
+                    continue;
+                }
+                //Computes a hash of the chunk to be imported
+                string beatmapSetHash = "";
+                using (SHA256 _sha256 = SHA256.Create())
+                {
+                    if (hashable == null || hashable.Length < 1) continue;
+                    hashable.Position = 0;
+                    byte[] _hashBytes = _sha256.ComputeHash(hashable);
+                    //Console.WriteLine(BitConverter.ToString(hashable.ToArray().Take(20).ToArray()));
+                    beatmapSetHash = BitConverter.ToString(_hashBytes).Replace("-", "").ToLower();
+                    item.Hash = beatmapSetHash;
+                    Console.WriteLine("item hash is:  " + beatmapSetHash);
+                }
+                if (beatmapSetHash == "") continue;
+                //Finding the hash in realm database, skip if there is (this is the only mechanism to avoid duplicate maps)
+                var ola = (string.IsNullOrEmpty(beatmapSetHash) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == hashStr));
+                if (ola != null)
+                {
+                    Console.WriteLine("Beatmap already exists in database."); flag = 1;
+                    Console.WriteLine(beatmapSetHash.ToString());
+                    Console.WriteLine(beatmapSetHash.Length);
+                    Console.WriteLine(ola.Hash);
+                }
+                else
+                {
+                    Console.WriteLine("Beatmap not in database."); flag = 0;
+                    Console.WriteLine(beatmapSetHash.ToString());
+                }
+                //sanity check for stupid mistakes
+                if (beatmapSetHash == "System.Byte[]" || beatmapSetHash == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+                {
+                    Console.WriteLine("man?");
+                    continue;
+                }
+                if (flag == 1) continue;
 
+                //realm will not be populated with anything if something goes wrong above, files List and item are cleaned each iteration
                 using (var transaction = realm.BeginWrite())
                 {
                     foreach (var file in files)
@@ -294,19 +328,9 @@ public class Program
                     }
                     transaction.Commit();
                 }
-                BeatmapSetInfo item = new BeatmapSetInfo();
+
                 item.Files.AddRange(files);
 
-                using (SHA256 _sha256 = SHA256.Create())
-                {
-                    if (hashable == null || hashable.Length < 1) continue;
-                    hashable.Position = 0;
-                    byte[] _hashBytes = _sha256.ComputeHash(hashable);
-                    //Console.WriteLine(BitConverter.ToString(hashable.ToArray().Take(20).ToArray()));
-                    string a = BitConverter.ToString(_hashBytes).Replace("-", "").ToLower();
-                    item.Hash = BitConverter.ToString(_hashBytes).Replace("-", "").ToLower();
-                    Console.WriteLine("item hash is:  " + a);
-                }
                 using (var transaction = realm.BeginWrite())
                 {
                     Populate(item, realm, WithSlash(lazerFilesFolder));
@@ -397,9 +421,9 @@ public class Program
             switch (mode)
             {
                 case 1:
-                    ToLegacy(args[1], args[2], args[3], args[4]); break;
+                    LazerToLegacy(args[1], args[2], args[3], args[4]); break;
                 case 2:
-                    LegacyToSym(args[1], args[2]); break;
+                    LegacyToSymbolic(args[1], args[2]); break;
                 case 3:
                     UpdateDatabase(args[1], args[2], args[3], args[4]); break;
                 default:
