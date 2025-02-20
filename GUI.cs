@@ -170,9 +170,12 @@ public partial class ComboLazerStorageSceneManager : CompositeDrawable
                                         },
                                         new OsuSpriteText
                                         {
-                                            Colour = Colour4.Wheat,
-                                            Text = " Combo Lazer Storage",
-                                            Font = OsuFont.Default.With(size: 40, weight: "bold")
+                                            Colour = Colour4.PowderBlue,
+                                            Origin = Anchor.TopCentre,
+                                            Anchor = Anchor.TopCentre,
+                                            Position = new Vector2(0f,5f),
+                                            Text = "combo lazer storage!",
+                                            Font = OsuFont.Default.With(size: 32, weight: FontWeight.Light)
 
                                         },
                                         new FillFlowContainer
@@ -275,19 +278,25 @@ public partial class SimulateScreen : ComboLazerStorageScreen
         {
             RelativeSizeAxes = Axes.X,
             Position = new Vector2(250f, 112f ),
-            Font = OsuFont.Default.With(size: 24)
+            Font = OsuFont.Default.With(size: 24),
+            AllowMultiline = true,
+            MaxWidth = 0.25f,
         };
         var lazerDirPathText = new OsuSpriteText
         {
             RelativeSizeAxes = Axes.X,
             Position = new Vector2(250f, 212f),
             Font = OsuFont.Default.With(size: 24),
+            AllowMultiline = true,
+            MaxWidth = 0.25f,
         };
         var realmFilePathText = new OsuSpriteText
         {
             RelativeSizeAxes = Axes.X,
             Position = new Vector2(250f, 312f),
-            Font = OsuFont.Default.With(size: 24)
+            Font = OsuFont.Default.With(size: 24),
+            AllowMultiline = true,
+            MaxWidth = 0.25f,
         };
         var dropdownText = new OsuSpriteText
         {
