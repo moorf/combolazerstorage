@@ -296,7 +296,7 @@ public class Program
                 }
                 if (beatmapSetHash == "") continue;
                 //Finding the hash in realm database, skip if there is (this is the only mechanism to avoid duplicate maps)
-                var ola = (string.IsNullOrEmpty(beatmapSetHash) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == hashStr));
+                var ola = (string.IsNullOrEmpty(beatmapSetHash) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == beatmapSetHash));
                 if (ola != null)
                 {
                     Console.WriteLine("Beatmap already exists in database."); flag = 1;
