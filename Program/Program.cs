@@ -73,10 +73,10 @@ public class Program
                     Artist = decoded.Metadata.Artist,
                     ArtistUnicode = decoded.Metadata.ArtistUnicode,
                     Author =
-                        {
-                            OnlineID = decoded.Metadata.Author.OnlineID,
-                            Username = decoded.Metadata.Author.Username
-                        },
+                    {
+                        OnlineID = decoded.Metadata.Author.OnlineID,
+                        Username = decoded.Metadata.Author.Username
+                    },
                     Source = decoded.Metadata.Source,
                     Tags = decoded.Metadata.Tags,
                     PreviewTime = decoded.Metadata.PreviewTime,
@@ -212,10 +212,10 @@ public class Program
                     string hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
                     string fullsrc_sym = WithSlash(lazerFilesFolder) + hashStr.Substring(0, 1) + "/" + hashStr.Substring(0, 2) + "/" + hashStr;
 
-                    string fullsrc_sym_backup= WithSlash(lazerFilesFolder + (unixTimestamp).ToString()) + hashStr.Substring(0, 1) + "/" + hashStr.Substring(0, 2) + "/" + hashStr;
+                    string fullsrc_sym_backup = WithSlash(lazerFilesFolder + (unixTimestamp).ToString()) + hashStr.Substring(0, 1) + "/" + hashStr.Substring(0, 2) + "/" + hashStr;
                     if (String.IsNullOrEmpty(fullsrc_sym) || String.IsNullOrEmpty(fullsrc_sym_backup))
                     {
-                        Console.WriteLine("lazer files or backupfolders name is null or empty."); 
+                        Console.WriteLine("lazer files or backupfolders name is null or empty.");
                         continue;
                     }
 
@@ -258,13 +258,14 @@ public class Program
                 //Making a chunk of data to be hashes, adds files to file list (realm needs hash and filename of all legacy files)
                 if (songdirs != null)
                 {
-                    foreach (var filenames in Directory.GetFiles(songdirs))
+                    foreach (var filenames in Directory.GetFiles(songdirs, "*.*", SearchOption.AllDirectories))
                     {
                         using (SHA256 sha256 = SHA256.Create())
                         {
                             using (FileStream fileStream = new FileStream(filenames, FileMode.Open, FileAccess.Read))
                             {
-                                if (filenames.EndsWith(".osu")) { 
+                                if (filenames.EndsWith(".osu"))
+                                {
                                     byte[] fileBytes = File.ReadAllBytes(filenames);
                                     using (MemoryStream memoryStream = new MemoryStream(fileBytes))
                                     {
@@ -278,6 +279,7 @@ public class Program
                                 RealmFile realmfile = new RealmFile();
                                 realmfile.Hash = _hashStr;
                                 string truncName = Path.GetFileName(filenames);
+                                truncName = filenames.Substring(songdirs.Length + 1).ToStandardisedPath();
                                 files.Add(new RealmNamedFileUsage(realmfile, truncName));
                             }
                         }
@@ -293,7 +295,7 @@ public class Program
 
                 hashable.Seek(0, SeekOrigin.Begin);
                 var gg = SHA256.HashData(hashable);
-                
+
                 item.Hash = string.Create(gg.Length * 2, gg, (span, b) =>
                 {
                     for (int i = 0; i < b.Length; i++)
@@ -336,7 +338,7 @@ public class Program
                     }
                     transaction.Commit();
                 }
-                
+
                 item.Files.AddRange(files);
 
                 using (var transaction = realm.BeginWrite())
@@ -406,14 +408,24 @@ public class Program
         }
     }
     static void Main(string[] args)
+    {
+        if (args.Length < 2)
         {
-            if (args.Length < 2)
+            if (args.ElementAt(0) != null)
             {
-            if (args.ElementAt(0) != null && args.ElementAt(0) == "4")
-            {
-                Console.WriteLine("Testing Export-Import");
-                combolazerstorage.Tests.DatabaseImport.Test();
-                return;
+                if (args.ElementAt(0) == "4")
+                {
+                    Console.WriteLine("Testing Export-Import");
+                    combolazerstorage.Tests.DatabaseImport.Test();
+                    return;
+                }
+                if (args.ElementAt(0) == "5")
+                {
+                    Console.WriteLine("Testing Storyboard");
+                    combolazerstorage.Tests.StoryboardImport.Test();
+                    return;
+                }
+
             }
             using DesktopGameHost host = Host.GetSuitableDesktopHost("ComboLazerStorage", new HostOptions
             {
@@ -426,11 +438,11 @@ public class Program
 
             host.Run(game);
             Console.ReadLine();
-                return;
-            }
-            else
-            {
-                MainApp(args);
-            }
+            return;
         }
+        else
+        {
+            MainApp(args);
+        }
+    }
 }
