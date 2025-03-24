@@ -30,6 +30,12 @@
 
 
   </ItemGroup>
+  <ItemGroup>
+    <None Include="TestFiles\**\*">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
 
 
 </Project>

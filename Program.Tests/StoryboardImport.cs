@@ -14,16 +14,16 @@ namespace combolazerstorage.Tests
         public static void Test()
         {
             Console.WriteLine("Start Storyboard Test.");
-            //Program.LazerToLegacy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/files"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/client.realm"), "48");
-            Program.UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/files"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/test2.realm"), "48");
+            //Program.LazerToLegacy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/files"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/client.realm"), "48");
+            Program.UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/files"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/test2.realm"), "48");
             var schema_ver = "48";
-            var sourceConfig = new RealmConfiguration(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/client.realm"))
+            var sourceConfig = new RealmConfiguration(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/client.realm"))
             {
                 SchemaVersion = (ulong)Int64.Parse(schema_ver),
                 MigrationCallback = Program.onMigration,
                 FallbackPipePath = Path.Combine(Path.GetTempPath(), @"lazer"),
             };
-            var sourceConfig2 = new RealmConfiguration(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/StoryboardTest/test2.realm"))
+            var sourceConfig2 = new RealmConfiguration(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/test2.realm"))
             {
                 SchemaVersion = (ulong)Int64.Parse(schema_ver),
                 MigrationCallback = Program.onMigration,

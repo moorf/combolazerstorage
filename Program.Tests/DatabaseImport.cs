@@ -67,23 +67,23 @@ namespace combolazerstorage.Tests
             Console.WriteLine(AppDomain.CurrentDomain.BaseDirectory);
             if (!File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tests/test2.realm")))
             {
-                File.Create("./Tests/test2.realm");
-                var config = new RealmConfiguration("./Tests/test2.realm")
+                File.Create("./TestFiles/test2.realm");
+                var config = new RealmConfiguration("./TestFiles/test2.realm")
                 {
                     IsReadOnly = false
                 };
                 using (var realm = Realm.GetInstance(config))
                 {
-                    Console.WriteLine($"Initialized empty Realm database at: {"./Tests/test2.realm"}");
+                    Console.WriteLine($"Initialized empty Realm database at: {"./TestFiles/test2.realm"}");
                 }
             }
             //string legacyFolder, string lazerFilesFolder, string realmPathFile, string schema_ver
-            //Program.LazerToLegacy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/lazer"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/test1.realm"), "48");
-            Program.UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/lazer"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/test2.realm"), "48");
+            //Program.LazerToLegacy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/lazer"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/test1.realm"), "48");
+            Program.UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/lazer"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/test2.realm"), "48");
             //test duping
-            Program.UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/lazer"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/test2.realm"), "48");
+            Program.UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/lazer"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/test2.realm"), "48");
 
-            CompareDatabases(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./Tests/Static/test1.realm"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tests/test2.realm"), "48");
+            CompareDatabases(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/Static/test1.realm"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tests/test2.realm"), "48");
         }
     }
 }
