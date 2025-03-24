@@ -411,7 +411,7 @@ public class Program
     {
         if (args.Length < 2)
         {
-            if (args.ElementAt(0) != null)
+            if (args.Length > 0 && args.ElementAt(0) != null)
             {
                 if (args.ElementAt(0) == "4")
                 {
