@@ -14,10 +14,11 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using osu.Framework;
 using osu.Framework.Platform;
+using osu.Framework.Testing;
 
 public class Program
 {
-    private static void onMigration(Migration migration, ulong lastSchemaVersion) { }
+    public static void onMigration(Migration migration, ulong lastSchemaVersion) { }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, uint dwFlags);
@@ -49,7 +50,7 @@ public class Program
                 var decodedDifficulty = decodedInfo.Difficulty;
 
                 var ruleset = realm.All<RulesetInfo>().FirstOrDefault(r => r.OnlineID == decodedInfo.Ruleset.OnlineID);
-
+                Console.WriteLine("Import a beatmap with ruleset" + ruleset?.OnlineID);
                 if (ruleset?.Available != true)
                 {
                     continue;
@@ -132,7 +133,7 @@ public class Program
 
     }
 
-    static void LazerToLegacy(string legacyFilesFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
+    public static void LazerToLegacy(string legacyFilesFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
     {
         var sourceConfig = new RealmConfiguration(realmPathFile)
         {
@@ -233,7 +234,7 @@ public class Program
         Console.WriteLine("Done LegacyToSymbolic.");
     }
 
-    static void UpdateDatabase(string legacyFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
+    public static void UpdateDatabase(string legacyFolder, string lazerFilesFolder, string realmPathFile, string schema_ver)
     {
         var sourceConfig = new RealmConfiguration(realmPathFile)
         {
@@ -263,11 +264,13 @@ public class Program
                         {
                             using (FileStream fileStream = new FileStream(filenames, FileMode.Open, FileAccess.Read))
                             {
-                                byte[] fileBytes = File.ReadAllBytes(filenames);
-                                using (MemoryStream memoryStream = new MemoryStream(fileBytes))
-                                {
-                                    memoryStream.CopyTo(hashable);
-                                    //Console.WriteLine("1");
+                                if (filenames.EndsWith(".osu")) { 
+                                    byte[] fileBytes = File.ReadAllBytes(filenames);
+                                    using (MemoryStream memoryStream = new MemoryStream(fileBytes))
+                                    {
+                                        memoryStream.CopyTo(hashable);
+                                        //Console.WriteLine("1");
+                                    }
                                 }
                                 byte[] hashBytes = sha256.ComputeHash(fileStream);
                                 string _hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
@@ -287,16 +290,18 @@ public class Program
                 }
                 //Computes a hash of the chunk to be imported
                 string beatmapSetHash = "";
-                using (SHA256 _sha256 = SHA256.Create())
+
+                hashable.Seek(0, SeekOrigin.Begin);
+                var gg = SHA256.HashData(hashable);
+                
+                item.Hash = string.Create(gg.Length * 2, gg, (span, b) =>
                 {
-                    if (hashable == null || hashable.Length < 1) continue;
-                    hashable.Position = 0;
-                    byte[] _hashBytes = _sha256.ComputeHash(hashable);
-                    //Console.WriteLine(BitConverter.ToString(hashable.ToArray().Take(20).ToArray()));
-                    beatmapSetHash = BitConverter.ToString(_hashBytes).Replace("-", "").ToLower();
-                    item.Hash = beatmapSetHash;
-                    Console.WriteLine("item hash is:  " + beatmapSetHash);
-                }
+                    for (int i = 0; i < b.Length; i++)
+                        _ = b[i].TryFormat(span[(i * 2)..], out _, "x2");
+                });
+
+                hashable.Seek(0, SeekOrigin.Begin);
+                beatmapSetHash = item.Hash;
                 if (beatmapSetHash == "") continue;
                 //Finding the hash in realm database, skip if there is (this is the only mechanism to avoid duplicate maps)
                 var ola = (string.IsNullOrEmpty(beatmapSetHash) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == beatmapSetHash));
@@ -402,11 +407,15 @@ public class Program
     }
     static void Main(string[] args)
         {
-
             if (args.Length < 2)
             {
-                Console.WriteLine("Error: Not enough arguments provided.");
-            using DesktopGameHost host = Host.GetSuitableDesktopHost("PerformanceCalculatorGUI", new HostOptions
+            if (args.ElementAt(0) != null && args.ElementAt(0) == "4")
+            {
+                Console.WriteLine("Testing Export-Import");
+                combolazerstorage.Tests.DatabaseImport.Test();
+                return;
+            }
+            using DesktopGameHost host = Host.GetSuitableDesktopHost("ComboLazerStorage", new HostOptions
             {
                 PortableInstallation = true,
                 BypassCompositor = false,
@@ -416,35 +425,12 @@ public class Program
             using var game = new ComboLazerStorageGame();
 
             host.Run(game);
-            /*
-            try
-            {
-                Process process = new Process();
-                process.StartInfo.FileName = "cmd.exe";
-                process.StartInfo.Arguments = $"/C python main.py"; // Runs and closes CMD
-                process.StartInfo.RedirectStandardOutput = false;
-                process.StartInfo.RedirectStandardError = false;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = false; // Runs without showing CMD window
-
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-
-                process.WaitForExit();
-
-                Console.WriteLine("Output:\n" + output);
-                Console.WriteLine("Error:\n" + error);
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-             */
             Console.ReadLine();
                 return;
             }
-        MainApp(args);
+            else
+            {
+                MainApp(args);
+            }
         }
 }
