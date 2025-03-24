@@ -15,6 +15,9 @@ using System.Security.Cryptography;
 using osu.Framework;
 using osu.Framework.Platform;
 using osu.Framework.Testing;
+using System.Reflection;
+using NuGet.Protocol;
+
 
 public class Program
 {
@@ -407,8 +410,75 @@ public class Program
                 Console.WriteLine("Something is wrong with the selected operation mode"); break;
         }
     }
+    public async static Task<string> DL()
+    {
+        using (var client = new HttpClient())
+        {
+            var response = await client.GetAsync("https://www.nuget.org/api/v2/package/ppy.osu.Game.Resources/2025.321.0");
+            response.EnsureSuccessStatusCode();
+            var packageBytes = await response.Content.ReadAsByteArrayAsync();
+
+            var packagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "package.nupkg");
+            await File.WriteAllBytesAsync(packagePath, packageBytes);
+
+            Console.WriteLine("Package downloaded to " + packagePath);
+            return packagePath;
+        }
+    }
+    static void LoadResources()
+    {
+        string packageId = "ppy.osu.Game.Resources"; // Example package
+        string packageVersion = "2025.321.0"; // Version of the package
+        string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        string librariesPath = baseDirectory;
+        var a = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*", SearchOption.AllDirectories);
+        var b = a.FirstOrDefault(s => s.Contains("osu.Game.Resources.dll") && !s.Contains("ppy.osu.Game.Resources.dll"));
+        string dllPath = b;
+        string destFilePath = dllPath;
+        if (File.Exists(dllPath))
+        {
+            Console.WriteLine($"Using cached version of {packageId}.dll");
+        }
+        else
+        {
+            Console.WriteLine($"Downloading {packageId}...");
+            var extractedFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "extracted");
+            Directory.CreateDirectory(extractedFolder);
+
+            using (var reader = new NuGet.Packaging.PackageArchiveReader(DL().Result))
+            {
+                var libFolder = reader.GetLibItems().FirstOrDefault();
+                if (libFolder != null)
+                {
+                    foreach (var file in libFolder.Items)
+                    {
+                        destFilePath = Path.Combine(extractedFolder, file);
+                        Directory.CreateDirectory(Path.GetDirectoryName(destFilePath));
+                        using (var fileStream = File.Create(destFilePath))
+                        using (var packageStream = reader.GetStream(file))
+                        {
+                            packageStream.CopyTo(fileStream);
+                        }
+                    }
+                    Console.WriteLine($"Package extracted to {extractedFolder}");
+                }
+            }
+            a = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*", SearchOption.AllDirectories);
+            b = a.FirstOrDefault(s => s.Contains("osu.Game.Resources.dll") && !s.Contains("ppy.osu.Game.Resources.dll"));
+            dllPath = b;
+            destFilePath = dllPath;
+        }
+        File.Delete(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "package.nupkg"));
+        if (File.Exists(destFilePath))
+        {
+            // Load the DLL into the AppDomain if needed
+            var assembly = Assembly.LoadFrom(destFilePath);
+            Console.WriteLine($"Assembly Loaded: {assembly.FullName}");
+        }
+    }
     static void Main(string[] args)
     {
+        LoadResources();
         if (args.Length < 2)
         {
             if (args.Length > 0 && args.ElementAt(0) != null)
