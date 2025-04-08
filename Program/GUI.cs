@@ -476,7 +476,7 @@ public partial class SimulateScreen : ComboLazerStorageScreen
         }
         if (e.NewValue != null)
         {
-            mode.Value = "Mode: " + dropdown.Current.Value;
+            mode.Value = dropdown.Current.Value;
         }
     }
     private void legacyPathChanged(ValueChangedEvent<DirectoryInfo> e)

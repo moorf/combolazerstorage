@@ -7,6 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using TagLib.Ape;
 
+using static OsuMain;
+using static Helper;
+
 namespace combolazerstorage.Tests
 {
     internal class StoryboardImport
@@ -15,18 +18,18 @@ namespace combolazerstorage.Tests
         {
             Console.WriteLine("Start Storyboard Test.");
             //Program.LazerToLegacy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/files"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/client.realm"), "48");
-            Program.UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/files"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/test2.realm"), "48");
+            UpdateDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/Songs"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/files"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/test2.realm"), "48");
             var schema_ver = "48";
             var sourceConfig = new RealmConfiguration(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/client.realm"))
             {
                 SchemaVersion = (ulong)Int64.Parse(schema_ver),
-                MigrationCallback = Program.onMigration,
+                MigrationCallback = onMigration,
                 FallbackPipePath = Path.Combine(Path.GetTempPath(), @"lazer"),
             };
             var sourceConfig2 = new RealmConfiguration(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "./TestFiles/StoryboardTest/test2.realm"))
             {
                 SchemaVersion = (ulong)Int64.Parse(schema_ver),
-                MigrationCallback = Program.onMigration,
+                MigrationCallback = onMigration,
                 FallbackPipePath = Path.Combine(Path.GetTempPath(), @"lazer"),
             };
             using (var sourceRealm = Realm.GetInstance(sourceConfig))
