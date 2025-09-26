@@ -1,19 +1,21 @@
-﻿using osu.Framework.Graphics;
-using osu.Framework.Graphics.Containers;
-using osuTK;
-using osu.Framework.Allocation;
+﻿using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
-using osu.Game.Graphics;
-using osu.Game.Graphics.UserInterfaceV2;
-using osu.Game.Graphics.Sprites;
 using osu.Framework.Screens;
+using osu.Game.Database;
+using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
+using osu.Game.Graphics.Sprites;
+using osu.Game.Graphics.UserInterfaceV2;
+using osuTK;
+using System.Reflection;
 
 public partial class ComboLazerStorageMainScreen : Screen
 {
     private Container mainContent = null!;
-    readonly List<string> optionList = new List<string> { "Lazer to Legacy", "Legacy to Symlinks", "Symlinks to Database" };
+    readonly List<string> optionList = new List<string> { "Lazer to Legacy", "Legacy to Lazer" };
 
     LabelledDropdown<string> dropdown;
     private RoundedButton legacyFileButton;
@@ -188,7 +190,7 @@ public partial class ComboLazerStorageMainScreen : Screen
             Origin = Anchor.TopLeft,
             Position = new Vector2(0.0f, 0.6f),
             Width = 0.3f,
-            Text = @"0",
+            Text = getLatestSchemaVersion().ToString(),
             Label = @"Schema version"
         };
         var settingsContainer = new FillFlowContainer
@@ -263,7 +265,17 @@ public partial class ComboLazerStorageMainScreen : Screen
         legacyPathSelector.CurrentPath.BindValueChanged(legacyPathChanged, true);
         lazerPathSelector.CurrentPath.BindValueChanged(lazerPathChanged, true);
     }
+    private ulong getLatestSchemaVersion()
+    {
+        var type = typeof(RealmAccess);
+        FieldInfo fi = type.GetField("schema_version", BindingFlags.Static | BindingFlags.NonPublic);
 
+        if (fi == null)
+            throw new Exception("Field not found!");
+
+        ulong value = (ulong)Convert.ToInt64(fi.GetValue(null));
+        return value;
+    }
     private void startButtonAction()
     {
         List<string> arguments = new List<string> { (optionList.IndexOf(mode.Value) + 1).ToString(), legacyDirPath.Value, lazerDirPath.Value, realmFilePath.Value, schema_version };
@@ -275,16 +287,6 @@ public partial class ComboLazerStorageMainScreen : Screen
     }
     private void dropdownChanged(ValueChangedEvent<string> e)
     {
-        if (e.NewValue == optionList[1])
-        {
-            realmFileButton.Alpha = 0;
-            realmFileButton.Enabled.Value = false;
-        }
-        else
-        {
-            realmFileButton.Alpha = 1;
-            realmFileButton.Enabled.Value = true;
-        }
         if (e.NewValue != null)
         {
             mode.Value = dropdown.Current.Value;

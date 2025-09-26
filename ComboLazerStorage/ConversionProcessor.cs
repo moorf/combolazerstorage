@@ -28,12 +28,13 @@ public class ConversionProcessor
     private static readonly Dictionary<ConversionMode, Action<AppArguments>> ModeHandlers = new()
         {
         { ConversionMode.LazerToLegacy, args => LazerToLegacy(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion) },
-        { ConversionMode.LegacyToSymbolic, args => LegacyToSymbolic(args.LegacyPath, args.LazerPath) },
-        { ConversionMode.UpdateDatabase, args => UpdateDatabase(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion) },
-        { ConversionMode.LegacyToSymbolicAndUpdate, args =>
+                { ConversionMode.LegacyToSymbolicAndUpdate, args =>
             {   LegacyToSymbolic(args.LegacyPath, args.LazerPath);
-                UpdateDatabase(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion); } }
-        };
+                UpdateDatabase(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion); }
+        },
+        //{ ConversionMode.LegacyToSymbolic, args => LegacyToSymbolic(args.LegacyPath, args.LazerPath) },
+        //{ ConversionMode.UpdateDatabase, args => UpdateDatabase(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion) }
+    };
 
     /// <summary>
     /// Checks if the arguments passed are correct. If so, carries out the task according to ConversionMode.    
