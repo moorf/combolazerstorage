@@ -19,9 +19,10 @@ public class ConversionProcessor
     public enum ConversionMode
     {
         LazerToLegacy = 1,
-        LegacyToSymbolic = 2,
-        UpdateDatabase = 3,
-        LegacyToSymbolicAndUpdate = 4
+        LegacyToSymbolicAndUpdate = 2,
+        LegacyToSymbolic = 3,
+        UpdateDatabase = 4,
+        
     }
     public record AppArguments(ConversionMode Mode, string LegacyPath, string LazerPath, string RealmFile, string SchemaVersion);
 
@@ -215,10 +216,17 @@ public class ConversionProcessor
     {
         string[] files = Directory.GetFiles(legacyFilesFolder, "*", SearchOption.AllDirectories);
         long unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        int filesAmount = files.Length; int i = 0;
         foreach (string file in files)
         {
+            i++;
+            Console.WriteLine(i + " / " + filesAmount);
             using (SHA256 sha256 = SHA256.Create())
             {
+                if (!File.Exists(file) && !Directory.Exists(file))
+                {
+                    continue;
+                }
                 using (FileStream fileStream = new FileStream(file, FileMode.Open, FileAccess.Read))
                 {
                     byte[] hashBytes = sha256.ComputeHash(fileStream);
@@ -266,8 +274,11 @@ public class ConversionProcessor
         }
         using (var realm = Realm.GetInstance(sourceConfig))
         {
-            foreach (var songdirs in ListDirectoriesWithOsuFiles(legacyFolder))
+            var dirs = ListDirectoriesWithOsuFiles(legacyFolder);
+            var dirsLen = dirs.Count; int i = 0;
+            foreach (var songdirs in dirs)
             {
+                Console.WriteLine(i + " / " + dirsLen);
                 //string hashStr = Path.GetFileName(songdirs);
                 BeatmapSetInfo item = new BeatmapSetInfo();
                 List<RealmNamedFileUsage> files = new List<RealmNamedFileUsage>();
