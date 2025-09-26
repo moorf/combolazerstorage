@@ -1,10 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
+/// <summary>
+/// Provides osu.Game.Resources.dll to the rest of the program. 
+/// </summary>
+/// <remarks>
+/// TODO: Give user the ability to locate existing libraries.
+/// </remarks>
 public class ResourceHelper
 {
     const string packageVersion = "2025.321.0";
@@ -23,6 +30,7 @@ public class ResourceHelper
             return packagePath;
         }
     }
+
     public static void LoadResourcesDll()
     {
         string packageId = "ppy.osu.Game.Resources";
@@ -51,7 +59,16 @@ public class ResourceHelper
                     foreach (var file in libFolder.Items)
                     {
                         destFilePath = Path.Combine(extractedFolder, file);
-                        Directory.CreateDirectory(Path.GetDirectoryName(destFilePath));
+                        var _path = Path.GetDirectoryName(destFilePath);
+                        if (_path != null)
+                        {
+                            Directory.CreateDirectory(_path);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Path is wrong.");
+                            System.Environment.Exit(1);
+                        }
                         using (var fileStream = File.Create(destFilePath))
                         using (var packageStream = reader.GetStream(file))
                         {

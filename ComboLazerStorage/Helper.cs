@@ -1,13 +1,21 @@
-﻿using osu.Framework.Extensions;
-using osu.Game.Beatmaps;
-using osu.Game.Beatmaps.Formats;
-using osu.Game.IO;
-using osu.Game.Rulesets;
-using osu.Game.Rulesets.Objects.Types;
-using Realms;
+﻿using Realms;
+using System.Runtime.InteropServices;
 
-class OsuHelper
+public class Helper
 {
+    public static void onMigration(Migration migration, ulong lastSchemaVersion) { }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, uint dwFlags);
+
+    public static string WithSlash(string path)
+    {
+        if (!string.IsNullOrEmpty(path) && !path.EndsWith("\\"))
+        {
+            return path + "/";
+        }
+        return path;
+    }
     public static HashSet<string> ListDirectoriesWithOsuFiles(string sourcePath)
     {
         HashSet<string> a = new HashSet<string>(1000);
@@ -28,5 +36,5 @@ class OsuHelper
     {
 
     }
-
 }
+

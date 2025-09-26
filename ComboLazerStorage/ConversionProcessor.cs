@@ -11,9 +11,63 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 using static Helper;
-using static OsuHelper;
-public class OsuMain
+/// <summary>
+/// Core of the program: necessary functions related to osu! file structures and osu!lazer database.
+/// </summary>
+public class ConversionProcessor
 {
+    public enum ConversionMode
+    {
+        LazerToLegacy = 1,
+        LegacyToSymbolic = 2,
+        UpdateDatabase = 3,
+        LegacyToSymbolicAndUpdate = 4
+    }
+    public record AppArguments(ConversionMode Mode, string LegacyPath, string LazerPath, string RealmFile, string SchemaVersion);
+
+    private static readonly Dictionary<ConversionMode, Action<AppArguments>> ModeHandlers = new()
+        {
+        { ConversionMode.LazerToLegacy, args => LazerToLegacy(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion) },
+        { ConversionMode.LegacyToSymbolic, args => LegacyToSymbolic(args.LegacyPath, args.LazerPath) },
+        { ConversionMode.UpdateDatabase, args => UpdateDatabase(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion) },
+        { ConversionMode.LegacyToSymbolicAndUpdate, args =>
+            {   LegacyToSymbolic(args.LegacyPath, args.LazerPath);
+                UpdateDatabase(args.LegacyPath, args.LazerPath, args.RealmFile, args.SchemaVersion); } }
+        };
+
+    /// <summary>
+    /// Checks if the arguments passed are correct. If so, carries out the task according to ConversionMode.    
+    /// </summary>
+    /// <param name="args"> args, according to AppArguments record.</param>
+    public static void ProcessArgsAndExecute(string[] args)
+    {
+        if (args.Length < 2 || !Enum.TryParse<ConversionMode>(args[0], out var mode) || !ModeHandlers.TryGetValue(mode, out Action<AppArguments>? value))
+        {
+            Console.WriteLine("Error.");
+            return;
+        }
+        
+        var appArgs = new AppArguments(
+            mode,
+            args.ElementAtOrDefault(1) ?? string.Empty,
+            args.ElementAtOrDefault(2) ?? string.Empty,
+            args.ElementAtOrDefault(3) ?? string.Empty,
+            args.ElementAtOrDefault(4) ?? string.Empty
+        );
+
+        if (new[] { appArgs.LegacyPath, appArgs.LazerPath }.Any(string.IsNullOrWhiteSpace))
+        {
+            Console.WriteLine("Some required arguments are missing. Aborting.");
+            return;
+        }
+
+        Console.WriteLine($"Selected Mode: {mode}");
+        for (int i = 1; i < args.Length; i++)
+            Console.WriteLine($"Path {i}: {args[i]}");
+        Console.WriteLine("Starting.");
+        ModeHandlers[mode](appArgs);
+        Console.WriteLine("Completed.");
+    }
     private static List<BeatmapInfo> createBeatmapDifficulties(BeatmapSetInfo beatmapSet, Realm realm, string basePath)
     {
         var beatmaps = new List<BeatmapInfo>();
@@ -112,6 +166,7 @@ public class OsuMain
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
+                System.Environment.Exit(1);
             }
             using (var sourceRealm = Realm.GetInstance(sourceConfig))
             {
@@ -130,29 +185,23 @@ public class OsuMain
                         string dest = WithSlash(legacyFilesFolder) + beatmapFiles.Hash + "/" + beatmapFile.Filename;
                         try
                         {
-                            // Check if source file exists
                             if (System.IO.File.Exists(fullsrc) && !string.IsNullOrEmpty(dest))
                             {
-                                // Ensure destination directory exists
                                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dest));
 
-                                // Copy the file from source to destination
                                 System.IO.File.Copy(fullsrc, dest, false);
                             }
                         }
                         catch (IOException ioEx)
                         {
-                            // Log the error but continue
                             Console.WriteLine($"File access error (IO) while processing {fullsrc}: {ioEx.Message}");
                         }
                         catch (UnauthorizedAccessException authEx)
                         {
-                            // Log the error but continue
                             Console.WriteLine($"Unauthorized access error while processing {fullsrc}: {authEx.Message}");
                         }
                         catch (Exception ex)
                         {
-                            // Catch any other unexpected errors and continue
                             Console.WriteLine($"Unexpected error while processing {fullsrc}: {ex.Message}");
                         }
                     }
@@ -205,111 +254,118 @@ public class OsuMain
             MigrationCallback = onMigration,
             FallbackPipePath = Path.Combine(Path.GetTempPath(), @"lazer"),
         };
-
-        var realm = Realm.GetInstance(sourceConfig);
-
-        foreach (var songdirs in ListDirectoriesWithOsuFiles(legacyFolder))
+        try
         {
-            //string hashStr = Path.GetFileName(songdirs);
-            BeatmapSetInfo item = new BeatmapSetInfo();
-            List<RealmNamedFileUsage> files = new List<RealmNamedFileUsage>();
-            int flag = 0;
-            Console.WriteLine(songdirs);
-
-            using (MemoryStream hashable = new MemoryStream())
+            var sourceRealm = Realm.GetInstance(sourceConfig);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            System.Environment.Exit(1);
+        }
+        using (var realm = Realm.GetInstance(sourceConfig))
+        {
+            foreach (var songdirs in ListDirectoriesWithOsuFiles(legacyFolder))
             {
-                //Making a chunk of data to be hashes, adds files to file list (realm needs hash and filename of all legacy files)
-                if (songdirs != null)
+                //string hashStr = Path.GetFileName(songdirs);
+                BeatmapSetInfo item = new BeatmapSetInfo();
+                List<RealmNamedFileUsage> files = new List<RealmNamedFileUsage>();
+                int flag = 0;
+                Console.WriteLine(songdirs);
+
+                using (MemoryStream hashable = new MemoryStream())
                 {
-                    foreach (var filenames in Directory.GetFiles(songdirs, "*.*", SearchOption.AllDirectories))
+                    //Making a chunk of data to be hashes, adds files to file list (realm needs hash and filename of all legacy files)
+                    if (songdirs != null)
                     {
-                        using (SHA256 sha256 = SHA256.Create())
+                        foreach (var filenames in Directory.GetFiles(songdirs, "*.*", SearchOption.AllDirectories))
                         {
-                            using (FileStream fileStream = new FileStream(filenames, FileMode.Open, FileAccess.Read))
+                            using (SHA256 sha256 = SHA256.Create())
                             {
-                                if (filenames.EndsWith(".osu"))
+                                using (FileStream fileStream = new FileStream(filenames, FileMode.Open, FileAccess.Read))
                                 {
-                                    byte[] fileBytes = File.ReadAllBytes(filenames);
-                                    using (MemoryStream memoryStream = new MemoryStream(fileBytes))
+                                    if (filenames.EndsWith(".osu"))
                                     {
-                                        memoryStream.CopyTo(hashable);
-                                        //Console.WriteLine("1");
+                                        byte[] fileBytes = File.ReadAllBytes(filenames);
+                                        using (MemoryStream memoryStream = new MemoryStream(fileBytes))
+                                        {
+                                            memoryStream.CopyTo(hashable);
+                                        }
                                     }
+                                    byte[] hashBytes = sha256.ComputeHash(fileStream);
+                                    string _hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                                    RealmFile realmfile = new RealmFile();
+                                    realmfile.Hash = _hashStr;
+                                    string truncName = Path.GetFileName(filenames);
+                                    truncName = filenames.Substring(songdirs.Length + 1).ToStandardisedPath();
+                                    files.Add(new RealmNamedFileUsage(realmfile, truncName));
                                 }
-                                byte[] hashBytes = sha256.ComputeHash(fileStream);
-                                string _hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-                                //Console.WriteLine(_hashStr);
-                                RealmFile realmfile = new RealmFile();
-                                realmfile.Hash = _hashStr;
-                                string truncName = Path.GetFileName(filenames);
-                                truncName = filenames.Substring(songdirs.Length + 1).ToStandardisedPath();
-                                files.Add(new RealmNamedFileUsage(realmfile, truncName));
                             }
                         }
                     }
-                }
-                else
-                {
-                    Console.WriteLine("Legacy's one of song directories is null. ");
-                    continue;
-                }
-                //Computes a hash of the chunk to be imported
-                string beatmapSetHash = "";
-
-                hashable.Seek(0, SeekOrigin.Begin);
-                var gg = SHA256.HashData(hashable);
-
-                item.Hash = string.Create(gg.Length * 2, gg, (span, b) =>
-                {
-                    for (int i = 0; i < b.Length; i++)
-                        _ = b[i].TryFormat(span[(i * 2)..], out _, "x2");
-                });
-
-                hashable.Seek(0, SeekOrigin.Begin);
-                beatmapSetHash = item.Hash;
-                if (beatmapSetHash == "") continue;
-                //Finding the hash in realm database, skip if there is (this is the only mechanism to avoid duplicate maps)
-                var ola = (string.IsNullOrEmpty(beatmapSetHash) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == beatmapSetHash));
-                if (ola != null)
-                {
-                    Console.WriteLine("Beatmap already exists in database."); flag = 1;
-                    Console.WriteLine(beatmapSetHash.ToString());
-                    Console.WriteLine(beatmapSetHash.Length);
-                    Console.WriteLine(ola.Hash);
-                }
-                else
-                {
-                    Console.WriteLine("Beatmap not in database."); flag = 0;
-                    Console.WriteLine(beatmapSetHash.ToString());
-                }
-                //sanity check for stupid mistakes
-                if (beatmapSetHash == "System.Byte[]" || beatmapSetHash == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-                {
-                    Console.WriteLine("man?");
-                    continue;
-                }
-                if (flag == 1) continue;
-
-                //realm will not be populated with anything if something goes wrong above, files List and item are cleaned each iteration
-                using (var transaction = realm.BeginWrite())
-                {
-                    foreach (var file in files)
+                    else
                     {
-                        if (!file.File.IsManaged)
-                            realm.Add(file.File, true);
-
+                        Console.WriteLine("Legacy's one of song directories is null. ");
+                        continue;
                     }
-                    transaction.Commit();
-                }
+                    //Computes a hash of the chunk to be imported
+                    string beatmapSetHash = "";
 
-                item.Files.AddRange(files);
+                    hashable.Seek(0, SeekOrigin.Begin);
+                    var gg = SHA256.HashData(hashable);
 
-                using (var transaction = realm.BeginWrite())
-                {
-                    Populate(item, realm, WithSlash(lazerFilesFolder));
-                    realm.Add(item);
+                    item.Hash = string.Create(gg.Length * 2, gg, (span, b) =>
+                    {
+                        for (int i = 0; i < b.Length; i++)
+                            _ = b[i].TryFormat(span[(i * 2)..], out _, "x2");
+                    });
 
-                    transaction.Commit();
+                    hashable.Seek(0, SeekOrigin.Begin);
+                    beatmapSetHash = item.Hash;
+                    if (beatmapSetHash == "") continue;
+                    //Finding the hash in realm database, skip if there is (this is the only mechanism to avoid duplicate maps)
+                    var ola = (string.IsNullOrEmpty(beatmapSetHash) ? null : realm.All<BeatmapSetInfo>().OrderBy(b => b.DeletePending).FirstOrDefault(b => b.Hash == beatmapSetHash));
+                    if (ola != null)
+                    {
+                        Console.WriteLine("Beatmap already exists in database."); flag = 1;
+                        Console.WriteLine(beatmapSetHash.ToString());
+                        Console.WriteLine(beatmapSetHash.Length);
+                        Console.WriteLine(ola.Hash);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Beatmap not in database."); flag = 0;
+                        Console.WriteLine(beatmapSetHash.ToString());
+                    }
+                    //sanity check for stupid mistakes
+                    if (beatmapSetHash == "System.Byte[]" || beatmapSetHash == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+                    {
+                        Console.WriteLine("man?");
+                        continue;
+                    }
+                    if (flag == 1) continue;
+
+                    //realm will not be populated with anything if something goes wrong above, files List and item are cleaned each iteration
+                    using (var transaction = realm.BeginWrite())
+                    {
+                        foreach (var file in files)
+                        {
+                            if (!file.File.IsManaged)
+                                realm.Add(file.File, true);
+
+                        }
+                        transaction.Commit();
+                    }
+
+                    item.Files.AddRange(files);
+
+                    using (var transaction = realm.BeginWrite())
+                    {
+                        Populate(item, realm, WithSlash(lazerFilesFolder));
+                        realm.Add(item);
+
+                        transaction.Commit();
+                    }
                 }
             }
         }
