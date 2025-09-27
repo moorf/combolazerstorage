@@ -7,6 +7,7 @@ using osu.Game.Models;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects.Types;
 using Realms;
+using SharpGen.Runtime;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -212,7 +213,7 @@ public class ConversionProcessor
         }
     }
 
-    public static void LegacyToSymbolic(string legacyFilesFolder, string lazerFilesFolder)
+    public static void LegacyToSymbolic(string legacyFilesFolder, string lazerFilesFolder, bool backup = true)
     {
         string[] files = Directory.GetFiles(legacyFilesFolder, "*", SearchOption.AllDirectories);
         long unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -241,14 +242,24 @@ public class ConversionProcessor
                     }
 
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullsrc_sym));
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullsrc_sym_backup));
-
-                    if (File.Exists(fullsrc_sym) && !File.Exists(fullsrc_sym_backup))
+                    if (backup)
                     {
-                        File.Move(fullsrc_sym, fullsrc_sym_backup);
+                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullsrc_sym_backup));
+
+                        if (File.Exists(fullsrc_sym) && !File.Exists(fullsrc_sym_backup))
+                        {
+                            File.Move(fullsrc_sym, fullsrc_sym_backup);
+                        }
                     }
-                    bool result = CreateSymbolicLink(fullsrc_sym, file, 0);
-                    if (!result && Marshal.GetLastWin32Error() != 183) Console.WriteLine("Failed to create symbolic link. Error code: " + Marshal.GetLastWin32Error());
+                    //bool result = CreateSymlink(fullsrc_sym, file, false);//CreateSymbolicLink(fullsrc_sym, file, 0);
+                    string fullsrc_symfinal = (@"\\?\" + fullsrc_sym.Replace(@"/", @"\"));
+                    string filefinal = (@"\\?\" + file.Replace(@"/", @"\"));
+                    bool result = CreateSymbolicLink(fullsrc_symfinal, filefinal, 0);
+
+                    if (!result && Marshal.GetLastWin32Error() != 183)
+                    {
+                        Console.WriteLine("Failed to create symbolic link. Error code: " + Marshal.GetLastWin32Error() + ": " + hashStr);
+                    }
                 }
             }
         }

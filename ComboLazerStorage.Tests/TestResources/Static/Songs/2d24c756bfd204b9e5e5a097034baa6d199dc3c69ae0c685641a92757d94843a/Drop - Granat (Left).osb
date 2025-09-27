@@ -1,0 +1,47 @@
+[Events]
+//Background and Video events
+//Storyboard Layer 0 (Background)
+Sprite,Background,Centre,"anmi.jpg",320,240
+ F,0,0,,0
+Sprite,Background,Centre,"SB\main.jpg",320,240
+ S,0,0,,0,0.64
+ S,0,0,,0.64
+ F,2,281,2270,0,1
+ F,0,2270,14040,1
+ F,2,14040,14704,1,0.2
+ F,0,14704,16196,0.2
+ F,2,16196,16527,0.2,1
+ F,0,16527,40068,1
+ F,2,40068,42058,1,0
+Sprite,Background,Centre,"SB\dark.jpg",320,240
+ S,0,0,,0,0.64
+ S,0,0,,0.64
+ F,2,24153,25148,0,1
+ F,0,25148,32111,1
+ F,2,32111,33105,1,0
+//Storyboard Layer 1 (Fail)
+//Storyboard Layer 2 (Pass)
+//Storyboard Layer 3 (Foreground)
+Sprite,Foreground,Centre,"SB\granat.png",58,384
+ S,0,0,,0,0.5
+ S,0,0,,0.5
+ M,1,281,2270,58,384,95,384
+ F,2,281,2270,0,1
+ F,0,2270,14040,1
+ F,2,14040,14704,1,0.2
+ F,0,14704,16196,0.2
+ F,2,16196,16527,0.2,1
+ F,0,16527,40068,1
+ F,2,40068,42058,1,0
+Sprite,Foreground,Centre,"SB\drop.png",110,433
+ S,0,0,,0,0.25
+ S,0,0,,0.25
+ M,1,281,2270,110,433,147,433
+ F,2,281,2270,0,1
+ F,0,2270,14040,1
+ F,2,14040,14704,1,0.2
+ F,0,14704,16196,0.2
+ F,2,16196,16527,0.2,1
+ F,0,16527,40068,1
+ F,2,40068,42058,1,0
+//Storyboard Sound Samples

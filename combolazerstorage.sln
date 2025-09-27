@@ -5,16 +5,42 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "combolazerstorage", "combolazerstorage.csproj", "{58488A36-5693-4FA8-A701-B4BAF0FCF442}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComboLazerStorage.Tests", "ComboLazerStorage.Tests\ComboLazerStorage.Tests.csproj", "{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Debug|x64.Build.0 = Debug|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Debug|x86.Build.0 = Debug|Any CPU
 		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Release|x64.ActiveCfg = Release|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Release|x64.Build.0 = Release|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Release|x86.ActiveCfg = Release|Any CPU
+		{58488A36-5693-4FA8-A701-B4BAF0FCF442}.Release|x86.Build.0 = Release|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Debug|x64.Build.0 = Debug|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Debug|x86.Build.0 = Debug|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Release|x64.ActiveCfg = Release|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Release|x64.Build.0 = Release|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Release|x86.ActiveCfg = Release|Any CPU
+		{3E2CB6B8-E38F-47B5-9280-25FA5C502EC8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
