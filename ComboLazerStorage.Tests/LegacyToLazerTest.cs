@@ -94,7 +94,7 @@ namespace ComboLazerStorage.Tests
         {
 
             string schemaVer = "51";
-            Assert.That(IsAdministrator(), $"Test not running as admin.");
+            if (!IsAdministrator()) Assert.Ignore($"Test not running as admin.");
             ConversionProcessor.LegacyToSymbolic(songsDir, dynamicSongsDir, backup: false);
             ConversionProcessor.UpdateDatabase(songsDir, dynamicSongsDir, realmDynamicFile, schemaVer);
             Assert.That(areEqualDatabases(realmDynamicFile, realmFullFile, schemaVer), $"Databases are not equal.");
