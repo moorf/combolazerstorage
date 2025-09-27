@@ -1,9 +1,14 @@
-﻿using System;
+﻿using NuGet.Common;
+using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
+using NuGet.Versioning;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 /// <summary>
@@ -14,21 +19,48 @@ using System.Threading.Tasks;
 /// </remarks>
 public class ResourceHelper
 {
-    const string packageVersion = "2025.321.0";
     public async static Task<string> DL()
     {
-        using (var client = new HttpClient())
+        using var client = new HttpClient();
+        string packageId = "ppy.osu.Game";
+        string packageVersion = GetGameVersionFromLoadedAssembly();
+
+        var logger = NullLogger.Instance;
+        var cache = new SourceCacheContext();
+
+        // NuGet v3 API URL
+        var repository = Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json");
+        var metadataResource = await repository.GetResourceAsync<PackageMetadataResource>();
+
+        var version = NuGetVersion.Parse(packageVersion);
+        var metadata = await metadataResource.GetMetadataAsync(packageId, includePrerelease: true, includeUnlisted: false, cache, logger, default);
+
+        var package = metadata.FirstOrDefault(m => m.Identity.Version == version);
+
+        if (package == null)
         {
-            var response = await client.GetAsync("https://www.nuget.org/api/v2/package/ppy.osu.Game.Resources/" + packageVersion);
-            response.EnsureSuccessStatusCode();
-            var packageBytes = await response.Content.ReadAsByteArrayAsync();
-
-            var packagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "package.nupkg");
-            await File.WriteAllBytesAsync(packagePath, packageBytes);
-
-            Console.WriteLine("Package downloaded to " + packagePath);
-            return packagePath;
+            Console.WriteLine("Package not found!");
         }
+        var versionToDL = "";
+        Console.WriteLine($"Dependencies for {packageId} {packageVersion}:");
+        foreach (var group in package.DependencySets)
+        {
+            foreach (var dependency in group.Packages)
+            {
+                if(dependency.Id == "ppy.osu.Game.Resources") Console.WriteLine($"- {dependency.Id} {dependency.VersionRange.MinVersion}");
+
+                versionToDL = dependency.VersionRange.MinVersion.ToNormalizedString();
+            }
+        }
+        var response = await client.GetAsync($"https://www.nuget.org/api/v2/package/ppy.osu.Game.Resources/{versionToDL}");
+        response.EnsureSuccessStatusCode();
+        var packageBytes = await response.Content.ReadAsByteArrayAsync();
+
+        var packagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "package.nupkg");
+        await File.WriteAllBytesAsync(packagePath, packageBytes);
+
+        Console.WriteLine($"Package downloaded to {packagePath} (version {versionToDL})");
+        return packagePath;
     }
 
     public static void LoadResourcesDll()
@@ -90,5 +122,18 @@ public class ResourceHelper
             Console.WriteLine($"Assembly Loaded: {assembly.FullName}");
         }
     }
+    public static string GetGameVersionFromLoadedAssembly()
+    {
+
+        var assembly = AppDomain.CurrentDomain.GetAssemblies()
+                        .FirstOrDefault(a => a.GetName().Name == "osu.Game");
+
+        if (assembly == null)
+            throw new Exception("ppy.osu.Game assembly is not loaded");
+
+        var version = assembly.GetName().Version;
+        return version.ToString();
+    }
+
 }
 
