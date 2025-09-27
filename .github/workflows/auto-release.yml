@@ -34,9 +34,6 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -o ./publish
 
-      - name: Setup GitHub CLI
-        uses: cli/cli-action@v3
-
       - name: Create Release
         run: |
           # Generate a tag with date + workflow run number
