@@ -32,7 +32,7 @@ jobs:
         continue-on-error: true
 
       - name: Publish
-        run: dotnet publish -c Release -o ./publish
+        run: dotnet publish -c Release -r win-x64 --self-contained true -o ./publish
 
       - name: Zip Publish Folder
         run: zip -r release.zip ./publish
