@@ -35,7 +35,7 @@ jobs:
         run: dotnet publish -c Release -r win-x64 --self-contained true -o ./publish
 
       - name: Zip Publish Folder
-        run: zip -r release.zip ./publish
+        run: zip -r release.zip ./publish -x "publish/osu.Game.Resources.dll" "publish/online.db" "osu.Game.Resources.dll" "online.db"
 
       - name: Create Tag and Release
         run: |
