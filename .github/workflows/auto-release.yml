@@ -34,30 +34,24 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -o ./publish
 
-      - name: Create Tag
-        id: create_tag
+      - name: Setup GitHub CLI
+        uses: cli/cli-action@v3
+
+      - name: Create Release
         run: |
+          # Generate a tag with date + workflow run number
           TAG="v$(date +'%Y.%m.%d')-${GITHUB_RUN_NUMBER}"
-          echo "Tag: $TAG"
+          echo "Creating tag $TAG"
+          
+          # Configure git
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
+          
+          # Create and push the tag
           git tag $TAG
           git push origin $TAG
-          echo "TAG=$TAG" >> $GITHUB_ENV
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.TAG }}
-          name: Release ${{ env.TAG }}
-          body: Automated release from GitHub Actions
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./publish/**/*
+          
+          # Create GitHub release and attach published files
+          gh release create $TAG ./publish/* --title "$TAG" --notes "Automated release from GitHub Actions"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
