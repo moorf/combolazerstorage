@@ -6,41 +6,34 @@ on:
       - master
 
 permissions:
-  contents: write  # required to push tags and create releases
+  contents: write
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0'
 
-      # 3️⃣ Restore dependencies
       - name: Restore dependencies
         run: dotnet restore
 
-      # 4️⃣ Build project
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-      # 5️⃣ Run tests (optional, continue even if they fail)
       - name: Test
         run: dotnet test --no-build --verbosity normal
         continue-on-error: true
 
-      # 6️⃣ Publish project
       - name: Publish
         run: dotnet publish -c Release -o ./publish
 
-      # 7️⃣ Create autotag
       - name: Create Tag
         id: create_tag
         run: |
@@ -52,7 +45,6 @@ jobs:
           git push origin $TAG
           echo "TAG=$TAG" >> $GITHUB_ENV
 
-      # 8️⃣ Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -63,7 +55,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 9️⃣ Upload Release Assets
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
